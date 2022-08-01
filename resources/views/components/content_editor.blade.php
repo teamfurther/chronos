@@ -197,7 +197,7 @@
 
                                     if (this.fieldData.entity_endpoints != null) {
                                         switch (this.fieldData.entity_model) {
-                                            case '\\Chronos\\Scaffolding\\Models\\Role':
+                                            case '\\Chronos\\Models\\Role':
                                                 this.entityEndpoint = this.fieldData.entity_endpoints.users;
                                                 this.labelField = 'name';
 

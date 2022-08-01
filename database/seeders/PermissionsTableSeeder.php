@@ -29,13 +29,13 @@ class PermissionsTableSeeder extends Seeder {
 
         Permission::create([
             'name' => 'edit_access_tokens',
-            'label' => trans('chronos.scaffolding::permissions.Edit access tokens'),
+            'label' => trans('chronos::permissions.Edit access tokens'),
             'order' => 10
         ]);
 
         Permission::create([
             'name' => 'delete_access_tokens',
-            'label' => trans('chronos.scaffolding::permissions.Delete access tokens'),
+            'label' => trans('chronos::permissions.Delete access tokens'),
             'order' => 10
         ]);
 

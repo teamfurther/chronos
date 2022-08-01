@@ -292,7 +292,7 @@
                                     response.body.data.forEach(function(role) {
                                         entityTypes['userRoles'].push({
                                             id:  role.id,
-                                            model: '\\Chronos\\Scaffolding\\Models\\Role',
+                                            model: '\\Chronos\\Models\\Role',
                                             name: role.name
                                         });
                                     });

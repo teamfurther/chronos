@@ -26,9 +26,6 @@
     "laravelcollective/html": "^6.0",
     "lavary/laravel-menu": "^1.8"
   },
-  "replace": {
-    "chronos/scaffolding": "self.version"
-  },
   "autoload": {
     "files": [
         "src/Helpers/helpers.php"
