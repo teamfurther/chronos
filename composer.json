@@ -1,31 +1,41 @@
 {
-  "name": "c4studio/chronos",
-  "description": "Chronos CMS - A developer friendly headless CMS built by C4studio",
+  "name": "further/chronos",
+  "description": "Chronos CMS - A developer friendly headless CMS built by Further Digital Solutions",
+  "keywords": [
+    "further",
+    "furtherdigitalsolutions",
+    "cms",
+    "headless",
+    "laravel",
+    "prometheus",
+    "chronos"
+  ],
   "license": "MIT",
   "authors": [
     {
-      "name": "C4studio",
-      "email": "office@c4studio.ro"
+      "name": "Further Digital Solutions",
+      "email": "hello@gofurther.digital"
     }
   ],
   "require": {
-    "php": ">=7.2",
-    "intervention/image": "^2.3",
-    "laravel/framework": "^5.7|^6.0",
-    "laravel/passport": ">3.0",
-    "laravelcollective/html": "^5.3|^6.0",
-    "lavary/laravel-menu": "^1.6"
+    "php": ">=8.0",
+    "intervention/image": "^2.7",
+    "laravel/framework": "^9.0",
+    "laravel/sanctum": "^3.0",
+    "laravel/ui": "^3.0",
+    "laravelcollective/html": "^6.0",
+    "lavary/laravel-menu": "^1.8"
   },
   "replace": {
     "chronos/scaffolding": "self.version"
   },
   "autoload": {
     "files": [
-        "src/Chronos/Content/app/Helpers/helpers.php",
-        "src/Chronos/Scaffolding/app/Helpers/helpers.php"
+        "src/Helpers/helpers.php"
     ],
     "psr-4": {
-      "Chronos\\": "src/Chronos"
+      "Chronos\\": "src",
+      "Chronos\\Database\\Seeders\\": "database/seeders"
     }
   }
 }
