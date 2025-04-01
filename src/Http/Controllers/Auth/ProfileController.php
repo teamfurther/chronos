@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Intervention\Image\Facades\Image;
+use Illuminate\Support\Str;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
 class ProfileController extends Controller
 {
@@ -81,6 +83,8 @@ class ProfileController extends Controller
     {
         // make, crop and resize uploaded image
         $cropData = $request->input('cropData');
+        $manager = new ImageManager(new Driver());
+        $image = $manager->read($file);
         $image = Image::make($request->input('file'));
         $image->crop(round($cropData['width']), round($cropData['height']), round($cropData['x']), round($cropData['y']))
               ->resize(250, 250, function ($constraint) {
@@ -89,7 +93,7 @@ class ProfileController extends Controller
 
         // save uploaded image
         do {
-            $filename = str_random(12);
+            $filename = Str::random(12);
         } while (file_exists(public_path('/uploads/user-pictures/') . $filename . '.png'));
         if (!file_exists(public_path('/uploads/user-pictures')))
             mkdir(public_path('/uploads/user-pictures'), 0755, true);

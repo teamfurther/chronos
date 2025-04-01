@@ -7,8 +7,9 @@ use Chronos\Models\Media;
 use Chronos\Services\ImageStyleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
-use Intervention\Image\Facades\Image;
-use Symfony\Component\HttpFoundation\File\MimeType\MimeTypeExtensionGuesser;
+use Illuminate\Support\Str;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class MediaController extends Controller
 {
@@ -179,8 +180,7 @@ class MediaController extends Controller
 
                 // guess extension
                 $mime = str_replace('data:', '', $mime);
-                $extensionGuesser = new MimeTypeExtensionGuesser();
-                $extension = $extensionGuesser->guess($mime);
+                $extension = guess_extension_from_mime($mime);
 
                 $data = str_replace('base64,', '', $data);
                 $data = base64_decode($data);
@@ -193,8 +193,8 @@ class MediaController extends Controller
                     mkdir($upload_path, 0755, true);
                 $asset_path = $path['asset_path'];
 
-                $filename = $request->has('fileNames') ? pathinfo($request->get('fileNames')[$key])['filename'] : str_random(12);
-                $filename = str_transliterate(str_slug($filename));
+                $filename = $request->has('fileNames') ? pathinfo($request->get('fileNames')[$key])['filename'] : Str::random(12);
+                $filename = str_transliterate(Str::slug($filename));
                 $basename = $filename . '.' . $extension;
 
                 // make sure file names are unique
@@ -232,7 +232,8 @@ class MediaController extends Controller
                 // if image, generate styles
                 if (in_array($extension, Media::$image_types) && $extension != 'svg') {
                     // update media model
-                    $image = Image::make($file);
+                    $manager = new ImageManager(new Driver());
+                    $image = $manager->read($file);
                     $media->update([
                         'image_height' => $image->height(),
                         'image_width' => $image->width(),

@@ -8,7 +8,6 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpFoundation\File\MimeType\MimeTypeGuesser;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class Handler extends BaseHandler
@@ -70,8 +69,7 @@ class Handler extends BaseHandler
 
                         // generate and return image style
                         if (ImageStyleService::generate($upload_path, $asset_path, $basename)) {
-                            $mimeGuesser = MimeTypeGuesser::getInstance();
-                            $mime = $mimeGuesser->guess($upload_path . '/' . $basename);
+                            $mime = guess_extension_from_mime($upload_path . '/' . $basename);
 
                             return response(file_get_contents($upload_path . '/' . $basename), 200)->header('Content-Type', $mime);
                         }

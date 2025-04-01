@@ -20,6 +20,17 @@ Chronos\ChronosServiceProvider::class,
 ...
 ```
 
+### Local repositories
+Chronos depends on a forked legacy package which is not available on Packagist. To install it, add the following to your composer.json:
+
+```json
+"repositories": [
+    {
+        "type": "vcs",
+        "url": "https://github.com/teamfurther/laravelcollective-html"
+    }
+],
+```
 
 ### Install dependencies
 

@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 /* CONTENT */
 Route::get('content/manage/{type}', ['uses' => 'Content\ContentController@index', 'as' => 'api.content']);
 Route::get('content/manage/{type}/export', ['uses' => 'Content\ContentController@export', 'as' => 'api.content.export']);

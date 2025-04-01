@@ -4,8 +4,9 @@ namespace Chronos\Services;
 
 use Chronos\Models\Media;
 use Chronos\Models\ImageStyle;
-use GuzzleHttp\Client;
-use Intervention\Image\Facades\Image;
+use Illuminate\Support\Str;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class ImageStyleService
 {
@@ -31,29 +32,31 @@ class ImageStyleService
         $media = Media::where('basename', $basename)->first();
         $style = $media->style;
 
-        $image = Image::make($upload_path . '/' .$media->parent->basename);
+        $manager = new ImageManager(new Driver());
+        $image = $manager->read($upload_path . '/' .$media->parent->basename);
 
         // resize
         if ($style->height || $style->width) {
-            $image->resize($style->width, $style->height, function ($constraint) use ($style) {
-                $constraint->aspectRatio();
-
-                if (!$style->upsizing)
-                    $constraint->upsize();
-            });
+            if ($style->upsizing) {
+                $image->scale($style->width, $style->height);
+            } else {
+                $image->scaleDown($style->width, $style->height);
+            }
         }
 
         // rotate
-        if ($style->rotate != 0)
+        if ($style->rotate != 0) {
             $image->rotate($style->rotate);
+        }
 
         // crop
         if ($style->crop_height && $style->crop_width) {
             if ($style->crop_type == 'fit') {
-                $image->fit($style->crop_width, $style->crop_height, function ($constraint) use ($style) {
-                    if (!$style->upsizing)
-                        $constraint->upsize();
-                });
+                if ($style->upsizing) {
+                    $image->cover($style->crop_width, $style->crop_height);
+                } else {
+                    $image->coverDown($style->crop_width, $style->crop_height);
+                }
             } else {
                 $crop_x = null;
                 $crop_y = null;
@@ -112,7 +115,7 @@ class ImageStyleService
         $image_styles = $q->get();
 
         foreach ($image_styles as $image_style) {
-            $style_filename = $filename . '-' . str_slug($image_style->name);
+            $style_filename = $filename . '-' . Str::slug($image_style->name);
             $style_basename = $style_filename . '.' . $extension;
 
             // create media model

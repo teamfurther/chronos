@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 /* AUTH */
 Route::get('login', ['as' => 'chronos.auth.login', 'uses' => 'Auth\LoginController@showLoginForm']);
 Route::post('login', ['as' => 'chronos.auth.login_post', 'uses' => 'Auth\LoginController@login']);

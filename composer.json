@@ -18,14 +18,20 @@
     }
   ],
   "require": {
-    "php": ">=8.0",
-    "intervention/image": "^2.7",
-    "laravel/framework": "^9.0",
-    "laravel/sanctum": "^3.0",
-    "laravel/ui": "^3.0",
-    "laravelcollective/html": "^6.0",
+    "php": ">=8.1",
+    "further/laravelcollective-html": "dev-main",
+    "intervention/image": "^3.11",
+    "laravel/framework": "^12.4",
+    "laravel/sanctum": "^4.0",
+    "laravel/ui": "^4.6",
     "lavary/laravel-menu": "^1.8"
   },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/teamfurther/laravelcollective-html"
+    }
+  ],
   "autoload": {
     "files": [
         "src/Helpers/helpers.php"
