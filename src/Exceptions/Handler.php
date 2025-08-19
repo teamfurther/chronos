@@ -130,7 +130,7 @@ class Handler extends BaseHandler
 	    }
         // or app
         else {
-            return redirect($e->redirectTo());
+            return redirect($e->redirectTo($request));
         }
     }
 }
