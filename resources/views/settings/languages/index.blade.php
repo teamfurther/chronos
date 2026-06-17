@@ -78,7 +78,8 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <language-editor inline-template>
-                    {!! Form::open(['route' => 'api.settings.languages.store', 'method' => 'POST', 'v-on:submit.prevent' => 'saveForm', 'novalidate' => 'novalidate']) !!}
+                    <form method="POST" action="{{ route('api.settings.languages.store') }}" v-on:submit.prevent="saveForm" novalidate>
+                        @csrf
                         <div class="modal-header">
                             <button type="button" class="modal-close" data-dismiss="modal"><span class="icon c4icon-cross-2"></span></button>
                             <h4 class="modal-title">{!! trans('chronos::interface.Add language') !!}</h4>
@@ -94,7 +95,7 @@
                             <button class="btn btn-default" type="button" data-dismiss="modal">{!! trans('chronos::interface.Close') !!}</button>
                             <button class="btn btn-primary" name="process" type="submit" value="1">{!! trans('chronos::forms.Save') !!}</button>
                         </div>
-                    {!! Form::close() !!}
+                    </form>
                 </language-editor>
             </div>
         </div>

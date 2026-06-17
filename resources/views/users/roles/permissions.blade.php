@@ -15,7 +15,9 @@
                     <h2 class="panel-title">{!! trans('chronos::interface.Permissions') !!}</h2>
                     @if (count($roles) > 0)
                         <permissions-editor inline-template>
-                            {!! Form::open(['route' => 'api.users.permissions.update', 'method' => 'PATCH', 'v-on:submit.prevent' => 'saveForm', 'novalidate' => 'novalidate']) !!}
+                            <form method="POST" action="{{ route('api.users.permissions.update') }}" v-on:submit.prevent="saveForm" novalidate>
+                            @csrf
+                            @method('PATCH')
                             <table class="table permissions-table">
                                 <thead>
                                     <tr>
@@ -38,7 +40,7 @@
                                                     <td width="200">{{ $k }}</td>
                                                     @if (count($roles) > 0)
                                                         @foreach ($roles as $role)
-                                                            <td width="50">{!! Form::checkbox('permission[' . $role->id . '][]', $permission['id'], $role->hasPermission($permission['name']) ? true : false, ['class' => 'select'] ) !!}</td>
+                                                            <td width="50"><input class="select" name="permission[{{ $role->id }}][]" type="checkbox" value="{{ $permission['id'] }}" @checked($role->hasPermission($permission['name'])) /></td>
                                                         @endforeach
                                                     @endif
                                                     <td></td>
@@ -53,7 +55,7 @@
                             <div class="panel-footer">
                                 <button class="btn btn-primary" name="process" type="submit" value="1">{!! trans('chronos::forms.Save') !!}</button>
                             </div>
-                            {!! Form::close() !!}
+                            </form>
                         </permissions-editor>
                     @else
                         <p class="no-results">{!! trans('chronos::interface.There are no roles yet. Please <a href=":link">add a role</a> first.', ['link' => route('chronos.users.roles')]) !!}</p>

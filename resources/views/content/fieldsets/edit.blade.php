@@ -17,7 +17,9 @@
     </header><!--/.subheader -->
     <div class="container">
         <fieldset-editor v-bind:parent-id="{{ $parent->id }}" parent-type="{{ get_class($parent) == 'Chronos\Models\ContentType' ? 'ContentType' : 'Content' }}" v-bind:type-id="{{ $type->id }}" inline-template>
-            {!! Form::open(['route' => get_class($parent) == 'Chronos\Models\ContentType' ? ['api.content.types.fieldset', $parent] : ['api.content.fieldset', $type, $parent], 'method' => 'PATCH', 'v-on:submit.prevent' => 'saveFieldsets', 'novalidate' => 'novalidate']) !!}
+            <form method="POST" action="{{ get_class($parent) == 'Chronos\Models\ContentType' ? route('api.content.types.fieldset', $parent) : route('api.content.fieldset', [$type, $parent]) }}" v-on:submit.prevent="saveFieldsets" novalidate>
+            @csrf
+            @method('PATCH')
             <div class="row">
                 <div class="col-xs-12 col-md-8">
                     <div id="fieldset-editor-wrapper">
@@ -45,7 +47,7 @@
                     </div>
                 </div>
             </div>
-            {!! Form::close() !!}
+            </form>
         </fieldset-editor>
     </div>
 @endsection

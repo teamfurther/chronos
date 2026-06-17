@@ -11,7 +11,8 @@
     </header><!--/.subheader -->
     <div class="container">
         <content-editor v-bind:type-id="{{ $type->id }}" inline-template>
-            {!! Form::open(['route' => ['api.content.store', $type], 'method' => 'POST', 'v-on:submit.prevent' => 'saveContent', 'novalidate' => 'novalidate']) !!}
+            <form method="POST" action="{{ route('api.content.store', $type) }}" v-on:submit.prevent="saveContent" novalidate>
+            @csrf
             <div class="row">
                 <div class="col-xs-12 col-md-8">
                     <div id="content-editor-wrapper">
@@ -89,7 +90,7 @@
                     </div>
                 </div>
             </div>
-            {!! Form::close() !!}
+            </form>
         </content-editor>
     </div>
 @endsection

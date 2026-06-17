@@ -19,19 +19,12 @@
   ],
   "require": {
     "php": ">=8.3",
-    "further/laravelcollective-html": "dev-main",
     "intervention/image": "^3.11",
     "laravel/framework": "^13.0",
     "laravel/sanctum": "^4.0",
     "laravel/ui": "^4.6",
     "lavary/laravel-menu": "^1.8"
   },
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/teamfurther/laravelcollective-html"
-    }
-  ],
   "autoload": {
     "files": [
         "src/Helpers/helpers.php"

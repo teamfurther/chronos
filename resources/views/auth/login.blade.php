@@ -1,9 +1,10 @@
 @extends('chronos::guard')
 
 @section('content')
-    {!! Form::open(['route' => 'chronos.auth.login_post', 'method' => 'POST']) !!}
+    <form method="POST" action="{{ route('chronos.auth.login_post') }}">
+        @csrf
         <div class="form-group @if ($errors->has('email')) has-error @endif" id="email">
-            {!! Form::email('email', old('email'), ['class' => 'form-control', 'placeholder' => trans('chronos::forms.Email')]) !!}
+            <input class="form-control" name="email" type="email" value="{{ old('email') }}" placeholder="{{ trans('chronos::forms.Email') }}" />
             @if ($errors->has('email'))
                 <span class="help-block">
                     <strong>{!! trans('chronos::alerts.Incorrect email or password') !!}</strong>
@@ -13,7 +14,7 @@
         </div>
 
         <div class="form-group @if ($errors->has('password')) has-error @endif" id="password">
-            {!! Form::password('password', ['class' => 'form-control', 'placeholder' => trans('chronos::forms.Password')]) !!}
+            <input class="form-control" name="password" type="password" placeholder="{{ trans('chronos::forms.Password') }}" />
             <a id="reset-password" href="{{ route('chronos.auth.password_reset_request') }}" title="{!! trans('chronos::forms.Recover password') !!}">?</a>
             @if ($errors->has('password'))
                 <span class="help-block">
@@ -23,5 +24,5 @@
             @endif
         </div>
         <button type="submit" class="btn btn-primary">{!! trans('Log in') !!}</button>
-    {!! Form::close() !!}
+    </form>
 @endsection
