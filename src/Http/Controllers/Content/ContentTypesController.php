@@ -2,7 +2,7 @@
 
 namespace Chronos\Http\Controllers\Content;
 
-use App\Http\Controllers\Controller;
+use Chronos\Http\Controllers\Controller;
 use Chronos\Models\ContentType;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;

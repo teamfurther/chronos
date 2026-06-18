@@ -2,7 +2,7 @@
 
 namespace Chronos\Http\Controllers\Settings;
 
-use App\Http\Controllers\Controller;
+use Chronos\Http\Controllers\Controller;
 use Chronos\Models\ImageStyle;
 
 class ImageStylesController extends Controller

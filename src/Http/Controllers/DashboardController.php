@@ -2,7 +2,7 @@
 
 namespace Chronos\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use Chronos\Http\Controllers\Controller;
 
 class DashboardController extends Controller
 {

@@ -2,7 +2,7 @@
 
 namespace Chronos\Api\Controllers\Settings;
 
-use App\Http\Controllers\Controller;
+use Chronos\Http\Controllers\Controller;
 use Chronos\Models\Language;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;

@@ -2,7 +2,7 @@
 
 namespace Chronos\Api\Controllers\Users;
 
-use App\Http\Controllers\Controller;
+use Chronos\Http\Controllers\Controller;
 use App\Models\User;
 use Chronos\Models\Role;
 use Illuminate\Http\Request;
