@@ -84,12 +84,9 @@ class ProfileController extends Controller
         // make, crop and resize uploaded image
         $cropData = $request->input('cropData');
         $manager = new ImageManager(new Driver());
-        $image = $manager->read($file);
-        $image = Image::make($request->input('file'));
+        $image = $manager->read($request->input('file'));
         $image->crop(round($cropData['width']), round($cropData['height']), round($cropData['x']), round($cropData['y']))
-              ->resize(250, 250, function ($constraint) {
-                  $constraint->aspectRatio();
-              });
+              ->resize(250, 250);
 
         // save uploaded image
         do {
