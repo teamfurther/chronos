@@ -15,7 +15,9 @@
                 <div class="panel">
                     <h2 class="panel-title">{!! trans('chronos::interface.Image style info') !!}</h2>
                     <image-style-editor v-bind:style-id="{{ $style->id }}" inline-template>
-                        {!! Form::open(['route' => ['api.settings.image_styles.update', $style->id], 'method' => 'PATCH', 'v-on:submit.prevent' => 'saveForm', 'novalidate' => 'novalidate']) !!}
+                        <form method="POST" action="{{ route('api.settings.image_styles.update', $style->id) }}" v-on:submit.prevent="saveForm" novalidate>
+                        @csrf
+                        @method('PATCH')
                         <div class="form-group" v-bind:class="{ 'has-error': Object.hasKey(store.formErrors, 'name') }">
                             <label class="control-label" for="name">{!! trans('chronos::forms.Name') !!}</label>
                             <input class="form-control" id="name" name="name" type="text" v-model="name" />
@@ -165,7 +167,7 @@
                             <a class="btn btn-cancel" href="{{ route('chronos.settings.image_styles') }}">{!! trans('chronos::forms.Cancel') !!}</a>
                             <button class="btn btn-primary" name="process" type="submit" value="1">{!! trans('chronos::forms.Save') !!}</button>
                         </div>
-                        {!! Form::close() !!}
+                        </form>
                     </image-style-editor>
                 </div>
             </div>

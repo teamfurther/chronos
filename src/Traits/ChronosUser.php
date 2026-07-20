@@ -5,7 +5,6 @@ namespace Chronos\Traits;
 use Chronos\Models\Permission;
 use Chronos\Models\Role;
 use Chronos\Notifications\Auth\ResetPasswordNotification;
-use Laravel\Passport\HasApiTokens;
 
 trait ChronosUser {
     /**

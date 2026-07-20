@@ -116,54 +116,178 @@ class Content extends Model
     {
         $model = parent::newFromBuilder($attributes);
 
-        $model->custom_attributes = Cache::remember($this->cacheKey($model) . ':custom_attributes', 60 * 60 * 24 * 7, function () use ($model) {
-            $custom_attributes = [];
-
-            $values = ContentFieldData::where('content_id', $model->attributes['id'])->get();
-            foreach ($values as $value) {
-                $field = $value->field;
-                $fieldset = $value->field->fieldset;
-
-                if (@unserialize($value->value) !== false || $value->value == 'b:0;') {
-                    $value->value = unserialize($value->value);
-                }
-                if ($field->type == 'text' && $field->widget == 'wysiwyg') {
-                    $value->filtered_value = filter_wysiwyg($value->value);
-                }
-
-                if ($fieldset->repeatable) {
-                    if (!isset($custom_attributes[$fieldset->machine_name][$value->fieldset_repetition_key]))
-                        $custom_attributes[$fieldset->machine_name][$value->fieldset_repetition_key] = new \stdClass();
-
-                    if ($field->repeatable) {
-                        $custom_attributes[$fieldset->machine_name][$value->fieldset_repetition_key]->{$field->machine_name}[$value->field_repetition_key] = $value->value;
-                        if (isset($value->filtered_value))
-                            $custom_attributes[$fieldset->machine_name][$value->fieldset_repetition_key]->{$field->machine_name . '_filtered'}[$value->field_repetition_key] = $value->filtered_value;
-                    } else {
-                        $custom_attributes[$fieldset->machine_name][$value->fieldset_repetition_key]->{$field->machine_name} = $value->value;
-                        if (isset($value->filtered_value))
-                            $custom_attributes[$fieldset->machine_name][$value->fieldset_repetition_key]->{$field->machine_name . '_filtered'} = $value->filtered_value;
-                    }
-                } else {
-                    if (!isset($custom_attributes[$fieldset->machine_name]))
-                        $custom_attributes[$fieldset->machine_name] = new \stdClass();
-
-                    if ($field->repeatable) {
-                        $custom_attributes[$fieldset->machine_name]->{$field->machine_name}[$value->field_repetition_key] = $value->value;
-                        if (isset($value->filtered_value))
-                            $custom_attributes[$fieldset->machine_name]->{$field->machine_name . '_filtered'}[$value->field_repetition_key] = $value->filtered_value;
-                    } else {
-                        $custom_attributes[$fieldset->machine_name]->{$field->machine_name} = $value->value;
-                        if (isset($value->filtered_value))
-                            $custom_attributes[$fieldset->machine_name]->{$field->machine_name . '_filtered'} = $value->filtered_value;
-                    }
-                }
-            }
-
-            return $custom_attributes;
+        $custom_attributes = Cache::remember($this->cacheKey($model) . ':custom_attributes:v2', 60 * 60 * 24 * 7, function () use ($model) {
+            return $this->buildCustomAttributes($model);
         });
 
+        $model->custom_attributes = $this->restoreCustomAttributes($custom_attributes);
+
         return $model;
+    }
+
+    /**
+     * Build dynamic field values in a cache-safe array shape.
+     *
+     * @param \Chronos\Models\Content $model
+     * @return array
+     */
+    private function buildCustomAttributes($model)
+    {
+        $custom_attributes = [];
+
+        $values = ContentFieldData::where('content_id', $model->attributes['id'])->get();
+        foreach ($values as $value) {
+            $field = $value->field;
+            $fieldset = $value->field->fieldset;
+            $field_value = $this->normalizeCacheValue($this->parseStoredFieldValue($value->value));
+            unset($filtered_value);
+
+            if ($field->type == 'text' && $field->widget == 'wysiwyg') {
+                $filtered_value = filter_wysiwyg($field_value);
+            }
+
+            if ($fieldset->repeatable) {
+                if (!isset($custom_attributes[$fieldset->machine_name][$value->fieldset_repetition_key]))
+                    $custom_attributes[$fieldset->machine_name][$value->fieldset_repetition_key] = [];
+
+                if ($field->repeatable) {
+                    $custom_attributes[$fieldset->machine_name][$value->fieldset_repetition_key][$field->machine_name][$value->field_repetition_key] = $field_value;
+                    if (isset($filtered_value))
+                        $custom_attributes[$fieldset->machine_name][$value->fieldset_repetition_key][$field->machine_name . '_filtered'][$value->field_repetition_key] = $filtered_value;
+                } else {
+                    $custom_attributes[$fieldset->machine_name][$value->fieldset_repetition_key][$field->machine_name] = $field_value;
+                    if (isset($filtered_value))
+                        $custom_attributes[$fieldset->machine_name][$value->fieldset_repetition_key][$field->machine_name . '_filtered'] = $filtered_value;
+                }
+            } else {
+                if (!isset($custom_attributes[$fieldset->machine_name]))
+                    $custom_attributes[$fieldset->machine_name] = [];
+
+                if ($field->repeatable) {
+                    $custom_attributes[$fieldset->machine_name][$field->machine_name][$value->field_repetition_key] = $field_value;
+                    if (isset($filtered_value))
+                        $custom_attributes[$fieldset->machine_name][$field->machine_name . '_filtered'][$value->field_repetition_key] = $filtered_value;
+                } else {
+                    $custom_attributes[$fieldset->machine_name][$field->machine_name] = $field_value;
+                    if (isset($filtered_value))
+                        $custom_attributes[$fieldset->machine_name][$field->machine_name . '_filtered'] = $filtered_value;
+                }
+            }
+        }
+
+        return $custom_attributes;
+    }
+
+    /**
+     * Restore cached custom field arrays to their object-like public shape.
+     *
+     * @param array $custom_attributes
+     * @return array
+     */
+    private function restoreCustomAttributes($custom_attributes)
+    {
+        if (!is_array($custom_attributes)) {
+            return [];
+        }
+
+        foreach ($custom_attributes as $key => $value) {
+            if ($this->hasOnlyIntegerKeys($value)) {
+                foreach ($value as $repetition_key => $repetition_value) {
+                    $value[$repetition_key] = $this->arrayToObject($repetition_value);
+                }
+
+                $custom_attributes[$key] = $value;
+            } else {
+                $custom_attributes[$key] = $this->arrayToObject($value);
+            }
+        }
+
+        return $custom_attributes;
+    }
+
+    /**
+     * Parse serialized field values when needed.
+     *
+     * @param mixed $value
+     * @return mixed
+     */
+    private function parseStoredFieldValue($value)
+    {
+        if (!is_string($value)) {
+            return $value;
+        }
+
+        if (@unserialize($value) !== false || $value == 'b:0;') {
+            return unserialize($value);
+        }
+
+        return $value;
+    }
+
+    /**
+     * Ensure cached custom values do not contain arbitrary objects.
+     *
+     * @param mixed $value
+     * @return mixed
+     */
+    private function normalizeCacheValue($value)
+    {
+        if ($value instanceof \JsonSerializable) {
+            $value = $value->jsonSerialize();
+        } elseif ($value instanceof \Illuminate\Contracts\Support\Arrayable) {
+            $value = $value->toArray();
+        } elseif (is_object($value)) {
+            $value = get_object_vars($value);
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $key => $item) {
+                $value[$key] = $this->normalizeCacheValue($item);
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * Recursively turn associative arrays into stdClass objects.
+     *
+     * @param mixed $value
+     * @return mixed
+     */
+    private function arrayToObject($value)
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        $object = new \stdClass();
+        foreach ($value as $key => $item) {
+            $object->{$key} = $item;
+        }
+
+        return $object;
+    }
+
+    /**
+     * Determine whether an array only uses integer keys.
+     *
+     * @param mixed $value
+     * @return bool
+     */
+    private function hasOnlyIntegerKeys($value)
+    {
+        if (!is_array($value)) {
+            return false;
+        }
+
+        foreach (array_keys($value) as $key) {
+            if (!is_int($key)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -207,52 +331,48 @@ class Content extends Model
      */
     public function getAllFieldsetsAttribute()
     {
-        return Cache::remember($this->cacheKey() . ':fieldsets', 60 * 60 * 24 * 7, function () {
-            $fieldsets = [];
-            $all_fieldsets = [];
+        $fieldsets = [];
+        $all_fieldsets = [];
 
-            if ($this->type->fieldsets)
-                $all_fieldsets = $this->type->fieldsets;
-            if ($this->fieldsets)
-                $all_fieldsets = $all_fieldsets->merge($this->fieldsets);
+        if ($this->type->fieldsets)
+            $all_fieldsets = $this->type->fieldsets;
+        if ($this->fieldsets)
+            $all_fieldsets = $all_fieldsets->merge($this->fieldsets);
 
-            if ($all_fieldsets) {
-                foreach ($all_fieldsets as $fieldset) {
-                    $fieldset_orig = clone $fieldset;
-                    $fieldset_repetitions = [$fieldset_orig];
+        if ($all_fieldsets) {
+            foreach ($all_fieldsets as $fieldset) {
+                $fieldset_orig = clone $fieldset;
+                $fieldset_repetitions = [$fieldset_orig];
 
-                    foreach ($fieldset->fields as $field) {
-                        $field_orig = clone $field;
-                        $field_repetitions = [$field_orig];
+                foreach ($fieldset->fields as $field) {
+                    $field_orig = clone $field;
+                    $field_repetitions = [$field_orig];
 
-                        $field_values = [];
-                        $values = ContentFieldData::query()->where('content_id', $this->id)->where('field_id', $field->id)->get();
+                    $field_values = [];
+                    $values = ContentFieldData::query()->where('content_id', $this->id)->where('field_id', $field->id)->get();
 
-                        if ($values) {
-                            foreach ($values as $valueData) {
-                                if (@unserialize($valueData->value) !== false || $valueData->value == 'b:0;')
-                                    $valueData->value = unserialize($valueData->value);
+                    if ($values) {
+                        foreach ($values as $valueData) {
+                            $valueData->value = $this->parseStoredFieldValue($valueData->value);
 
-                                if (!isset($fieldset_repetitions[$valueData->fieldset_repetition_key]))
-                                    $fieldset_repetitions[$valueData->fieldset_repetition_key] = clone $fieldset_orig;
-                                if (!isset($field_repetitions[$valueData->field_repetition_key]))
-                                    $field_repetitions[$valueData->field_repetition_key] = clone $field_orig;
+                            if (!isset($fieldset_repetitions[$valueData->fieldset_repetition_key]))
+                                $fieldset_repetitions[$valueData->fieldset_repetition_key] = clone $fieldset_orig;
+                            if (!isset($field_repetitions[$valueData->field_repetition_key]))
+                                $field_repetitions[$valueData->field_repetition_key] = clone $field_orig;
 
-                                $field_values[$valueData->fieldset_repetition_key][$valueData->field_repetition_key] = $valueData->value;
-                            }
+                            $field_values[$valueData->fieldset_repetition_key][$valueData->field_repetition_key] = $valueData->value;
                         }
-                        $field->value = $field_values;
-                        $field->repetitions = $field_repetitions;
                     }
-
-                    $fieldset->repetitions = $fieldset_repetitions;
-                    $fieldsets[] = $fieldset;
+                    $field->value = $field_values;
+                    $field->repetitions = $field_repetitions;
                 }
 
+                $fieldset->repetitions = $fieldset_repetitions;
+                $fieldsets[] = $fieldset;
             }
+        }
 
-            return $fieldsets;
-        });
+        return $fieldsets;
     }
 
     /**

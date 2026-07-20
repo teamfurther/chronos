@@ -156,6 +156,9 @@
                     // Tagging autocomplete
                     if (this.multiple) {
                         if (Array.isArray(this.value)) {
+                            this.tags = [];
+                            this.tagValues = [];
+
                             this.value.forEach(function(value) {
                                 this.tagValues.push(value);
 

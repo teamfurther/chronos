@@ -1,140 +1,210 @@
 # Chronos CMS
 
----
+A developer-friendly headless CMS built by [Further](https://gofurther.digital).
 
-A developer friendly headless CMS built by [Further](https://gofurther.digital).
+## Requirements
 
----
+- PHP 8.3 or newer
+- Laravel 13
+- A database supported by Laravel
+- The PHP GD extension for image processing
 
 ## Installation
 
-It's as easy as:
+### Install from Packagist
 
-    composer require further/chronos
-
-After composer has run add following line to the providers[] array in ```app/config/app.php```:
-
-```php
-...
-Chronos\ChronosServiceProvider::class,
-...
+```bash
+composer require further/chronos
 ```
 
-### Local repositories
-Chronos depends on a forked legacy package which is not available on Packagist. To install it, add the following to your composer.json:
+### Register the service provider
 
-```json
-"repositories": [
+Chronos does not currently use Laravel package auto-discovery. Add its service
+provider to `bootstrap/providers.php`:
+
+```php
+<?php
+
+use App\Providers\AppServiceProvider;
+use Chronos\ChronosServiceProvider;
+
+return [
+    AppServiceProvider::class,
+    ChronosServiceProvider::class,
+];
+```
+
+Composer installs and discovers Chronos' third-party dependencies. Do not add
+legacy Intervention Image or Laravel Collective providers and aliases to the
+application.
+
+## Configure Sanctum
+
+Chronos uses Laravel Sanctum for API access tokens. Install Laravel's API
+scaffolding:
+
+```bash
+php artisan install:api
+```
+
+If Artisan offers to run migrations, you may defer them until the migration
+step below.
+
+## Prepare the User model
+
+Chronos expects `App\Models\User` to use Sanctum, notifications, and the
+`ChronosUser` trait. A Laravel 13 User model can be configured as follows:
+
+```php
+<?php
+
+namespace App\Models;
+
+use Chronos\Traits\ChronosUser;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+#[Fillable([
+    'email',
+    'password',
+    'firstname',
+    'lastname',
+    'picture',
+    'role_id',
+])]
+#[Hidden([
+    'password',
+    'remember_token',
+])]
+class User extends Authenticatable
+{
+    /** @use HasFactory<UserFactory> */
+    use HasApiTokens;
+    use HasFactory;
+    use Notifiable;
+    use ChronosUser;
+
+    protected $appends = [
+        'endpoints',
+        'name',
+    ];
+
+    protected function casts(): array
     {
-        "type": "vcs",
-        "url": "https://github.com/teamfurther/laravelcollective-html"
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
     }
-],
+}
 ```
 
-### Install dependencies
+Chronos' migration removes the default `users.name` column and adds
+`firstname`, `lastname`, `picture`, and `role_id`. Remove `name` from the
+model's fillable attributes before running the migrations. Update any
+application factories, seeders, tests, or registration code that still writes
+to `users.name`.
 
-You also need to add the service providers for all the dependencies in ```app/config/app.php```:
+## Configure the Environment
 
-```php
-...
-Collective\Html\HtmlServiceProvider::class,
-Intervention\Image\ImageServiceProvider::class,
-Lavary\Menu\ServiceProvider::class,
-...
+Set the application's public URL and the absolute path to its public directory:
+
+```dotenv
+APP_URL=http://127.0.0.1:8000
+UPLOAD_URL=/absolute/path/to/application/public
 ```
 
-And also add the class aliases in the ```$aliases[]``` array:
+Chronos stores uploaded media below `UPLOAD_URL` and exposes it below
+`APP_URL`.
 
-```php
-...
-'Form' => Collective\Html\FormFacade::class,
-'Html' => Collective\Html\HtmlFacade::class,
-'Image' => Intervention\Image\Facades\Image::class,
-'Menu' => Lavary\Menu\Facade::class,
-...
+## Publish Resources
+
+Publish the package configuration:
+
+```bash
+php artisan vendor:publish --provider="Chronos\ChronosServiceProvider" --tag=config
 ```
 
+Publish the browser assets:
 
-### Publish assets
-
-Next we need to publish all the assets belonging to Chronos:
-
-	php artisan vendor:publish --tag=public
-
-Note 1: if you would like to overwrite existing files, use the --force switch
-Note 2: if you wish to only publish Chronos assets, you might want to use the --provider flag.
-
-
-### Prepare User model
-
-Next we need to prepare the User model to work with Chronos.
-
-1. Add the ChronosUser trait to our model:
-
-```php
-...
-use ChronosUser;
-...
+```bash
+php artisan vendor:publish --provider="Chronos\ChronosServiceProvider" --tag=public --force
 ```
 
-2. Next, add some values to the appends[] array:
+The assets are published to `public/chronos`.
 
-```php
-...
-/**
- * The accessors to append to the model's array form.
- *
- * @var array
- */
-protected $appends = ['endpoints', 'name'];
-...
+Views may optionally be published for customization:
+
+```bash
+php artisan vendor:publish --provider="Chronos\ChronosServiceProvider" --tag=views
 ```
 
+After publishing, review `config/chronos.php`, especially `upload_paths`.
 
-### Set APP_URL
+## Run Migrations and Seeders
 
-Chronos requires you to set APP_URL in your .env file
+Chronos automatically loads its package migrations. Ensure the application
+already has Laravel's default `users` table, then run:
 
-```
-APP_URL=https://chronos.ro
-```
-
-
-### Run migrations
-
-Almost done. We need to run the migrations and seed our database:
-
-```
+```bash
 php artisan migrate
-php artisan db:seed --class=\\Chronos\\Database\\Seeders\\DatabaseSeeder
+php artisan db:seed --class="Chronos\Database\Seeders\DatabaseSeeder"
 ```
 
+For a disposable test application, starting with a clean database is safer:
 
-### Set up task scheduling
-
-Chronos runs a couple of tasks in the background, so you will need to set up task scheduling by adding the following to your Cron entries on your server:
-
-```
-* * * * * php /path-to-your-project/artisan schedule:run >> /dev/null 2>&1
+```bash
+php artisan migrate:fresh
+php artisan db:seed --class="Chronos\Database\Seeders\DatabaseSeeder"
 ```
 
+## Clear Caches
 
-### Install and configure Sanctum
+After installation or after changing the local package:
 
-1. Publish Sanctum configuration
-
+```bash
+composer dump-autoload
+php artisan optimize:clear
 ```
-php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+
+## Open the Admin Interface
+
+Start the Laravel development server:
+
+```bash
+php artisan serve
 ```
 
-2. Run migration if you haven't done so yet
+Then open:
 
+```text
+http://127.0.0.1:8000/admin/login
 ```
-php artisan migrate
+
+## Task Scheduling
+
+Chronos registers a scheduled task that publishes content when its scheduled
+time is reached.
+
+During local development, run:
+
+```bash
+php artisan schedule:work
+```
+
+In production, run Laravel's scheduler every minute:
+
+```cron
+* * * * * cd /path-to-application && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 ---
+
 [https://gofurther.digital](https://gofurther.digital)
 
 P.S.: You're awesome for being on this page

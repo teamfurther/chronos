@@ -2,7 +2,7 @@
 
 return [
 
-    'version' => '3.0',
+    'version' => '3.2',
 
 
     'access_token' => env('CHRONOS_ACCESS_TOKEN'),

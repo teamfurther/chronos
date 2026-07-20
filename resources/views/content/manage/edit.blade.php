@@ -11,7 +11,9 @@
     </header><!--/.subheader -->
     <div class="container">
         <content-editor v-bind:content-id="{{ $content->id }}" v-bind:type-id="{{ $type->id }}" inline-template>
-            {!! Form::open(['route' => ['api.content.update', $type, $content], 'method' => 'PATCH', 'v-on:submit.prevent' => 'saveContent($event, 1)', 'novalidate' => 'novalidate']) !!}
+            <form method="POST" action="{{ route('api.content.update', [$type, $content]) }}" v-on:submit.prevent="saveContent($event, 1)" novalidate>
+            @csrf
+            @method('PATCH')
             <div class="row">
                 <div class="col-xs-12 col-md-8">
                     <div id="content-editor-wrapper">
@@ -113,7 +115,7 @@
                     </div>
                 </div>
             </div>
-            {!! Form::close() !!}
+            </form>
         </content-editor>
     </div>
 @endsection

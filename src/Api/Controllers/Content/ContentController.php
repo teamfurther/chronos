@@ -2,7 +2,7 @@
 
 namespace Chronos\Api\Controllers\Content;
 
-use App\Http\Controllers\Controller;
+use Chronos\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Chronos\Models\Content;
 use Chronos\Models\ContentField;
@@ -16,6 +16,7 @@ use Chronos\Generators\SeedGenerator;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Str;
 
 class ContentController extends Controller
 {
@@ -162,8 +163,8 @@ class ContentController extends Controller
             $content = Content::whereIn('id', $request->get('content'))->get();
 
         $generator = new SeedGenerator();
-        $generator->setFilename(studly_case($type->name) . 'ContentTableSeeder.php');
-        $generator->setClassName(studly_case($type->name) . 'ContentTableSeeder');
+        $generator->setFilename(Str::studly($type->name) . 'ContentTableSeeder.php');
+        $generator->setClassName(Str::studly($type->name) . 'ContentTableSeeder');
 
         $generator->addUses('Chronos\Models\Content');
         $generator->addUses('Chronos\Models\ContentField');

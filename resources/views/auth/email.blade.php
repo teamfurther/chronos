@@ -2,9 +2,10 @@
 
 @section('content')
     @if (!Session::has('msg_success'))
-        {!! Form::open(['route' => 'chronos.auth.password_reset_request_post', 'method' => 'POST']) !!}
+        <form method="POST" action="{{ route('chronos.auth.password_reset_request_post') }}">
+            @csrf
             <div class="form-group @if ($errors->has('email')) has-error @endif" id="email">
-                {!! Form::email('email', old('email'), ['class' => 'form-control', 'placeholder' => trans('Chronosforms.Email'), 'autocomplete' => 'off']) !!}
+                <input class="form-control" name="email" type="email" value="{{ old('email') }}" placeholder="{{ trans('Chronosforms.Email') }}" autocomplete="off" />
                 @if ($errors->has('email'))
                     <span class="help-block">
                         <strong>{!! trans('chronos::alerts.Incorrect email') !!}</strong>
@@ -14,7 +15,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary">{!! trans('chronos::forms.Recover') !!}</button>
-        {!! Form::close() !!}
+        </form>
     @else
         <div class="notification">
             <strong>{!! trans('chronos::alerts.Password recovery successful.') !!}</strong>

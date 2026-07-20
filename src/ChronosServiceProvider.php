@@ -2,11 +2,20 @@
 
 namespace Chronos;
 
+use Carbon\Carbon;
+use Chronos\Models\Content;
+use Chronos\Services\ImageStyleService;
 use Chronos\Services\RouteMapService;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Session\TokenMismatchException;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ChronosServiceProvider extends ServiceProvider {
 
@@ -70,6 +79,12 @@ class ChronosServiceProvider extends ServiceProvider {
 
         // register menu
         $this->registerMenu();
+
+        // register scheduled tasks
+        $this->registerSchedule();
+
+        // register exception rendering hooks
+        $this->registerExceptionRendering();
     }
 
     /**
@@ -79,14 +94,6 @@ class ChronosServiceProvider extends ServiceProvider {
      */
     public function register()
     {
-        // register custom ExceptionHandler
-        if (class_exists('Chronos\Exceptions\Handler')) {
-            $this->app->singleton(
-                \Illuminate\Contracts\Debug\ExceptionHandler::class,
-                \Chronos\Exceptions\Handler::class
-            );
-        }
-
         // default package configuration
         $this->mergeConfigFrom(
             __DIR__ . '/../config/defaults.php', 'chronos'
@@ -167,7 +174,7 @@ class ChronosServiceProvider extends ServiceProvider {
                 ->data('order', 910)->data('permissions', ['view_image_styles']);
 
             if (class_exists('Chronos\Models\Setting') && \Schema::hasTable('settings') && settings('is_multilanguage')) {
-                $settings_menu = $menu->get(camel_case(trans('chronos::menu.Settings')));
+                $settings_menu = $menu->get(Str::camel(trans('chronos::menu.Settings')));
                 $settings_permissions = $settings_menu->permissions;
                 $settings_permissions[] = 'edit_languages';
                 $settings_menu->data('permissions', $settings_permissions);
@@ -179,6 +186,106 @@ class ChronosServiceProvider extends ServiceProvider {
         \View::composer('*', function($view) {
             $view->with('chronos_menu', \Menu::get('ChronosMenu')->sortBy('order'));
         });
+    }
+
+    /**
+     * Register scheduled tasks.
+     */
+    protected function registerSchedule()
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
+            $schedule->call(function() {
+                $content = Content::where('status_scheduled', '<=', Carbon::now())->get();
+
+                foreach ($content as $item) {
+                    $item->status = 1;
+                    $item->status_scheduled = null;
+                    $item->save();
+                }
+            })->everyMinute();
+        });
+    }
+
+    /**
+     * Register package-specific exception rendering without replacing the app handler.
+     */
+    protected function registerExceptionRendering()
+    {
+        $this->callAfterResolving(ExceptionHandler::class, function ($handler) {
+            if (!method_exists($handler, 'renderable')) {
+                return;
+            }
+
+            $handler->renderable(function (AuthenticationException $e, $request) {
+                if ($request->is('admin') || $request->is('admin/*')) {
+                    return redirect()->guest(route('chronos.auth.login'));
+                }
+            });
+
+            $handler->renderable(function (TokenMismatchException $e, $request) {
+                if ($request->is('admin') || $request->is('admin/*')) {
+                    return response()->view('chronos::errors.token_mismatch', ['exception' => $e]);
+                }
+            });
+
+            $handler->renderable(function (HttpExceptionInterface $e, $request) {
+                $image_style_response = $this->renderImageStyleResponse($e, $request);
+                if ($image_style_response) {
+                    return $image_style_response;
+                }
+
+                $status = $e->getStatusCode();
+                if ($request && ($request->is('api') || $request->is('api/*'))) {
+                    return response()->json([
+                        'message' => $e->getMessage(),
+                        'status' => $status
+                    ], $status);
+                }
+
+                $view = $request && ($request->is('admin') || $request->is('admin/*')) ? "chronos::errors.{$status}" : "errors.{$status}";
+                if (view()->exists($view)) {
+                    return response()->view($view, ['exception' => $e], $status, $e->getHeaders());
+                }
+            });
+        });
+    }
+
+    /**
+     * Generate image styles on demand when a configured asset URL 404s.
+     */
+    protected function renderImageStyleResponse(HttpExceptionInterface $e, $request)
+    {
+        if ($e->getStatusCode() != 404 || !$request) {
+            return null;
+        }
+
+        foreach (config('chronos.upload_paths', []) as $path) {
+            $full_path = parse_url($path['asset_path']);
+            $check_path = isset($full_path['path']) ? trim($full_path['path'], '/') . '/*' : basename($request->path());
+            $host_matches = !isset($full_path['host']) || $request->getHttpHost() == $full_path['host'];
+
+            if (!$request->is($check_path) || !$host_matches) {
+                continue;
+            }
+
+            $basename = basename($request->path());
+            if (!ImageStyleService::checkIfGeneratableImageStyle($basename)) {
+                break;
+            }
+
+            $upload_path = $path['upload_path'];
+            if (!is_dir($upload_path)) {
+                mkdir($upload_path, 0755, true);
+            }
+
+            if (ImageStyleService::generate($upload_path, $path['asset_path'], $basename)) {
+                $mime = guess_extension_from_mime($upload_path . '/' . $basename);
+
+                return response(file_get_contents($upload_path . '/' . $basename), 200)->header('Content-Type', $mime);
+            }
+
+            break;
+        }
     }
 
 }

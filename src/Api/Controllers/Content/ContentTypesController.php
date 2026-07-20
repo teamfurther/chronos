@@ -2,7 +2,7 @@
 
 namespace Chronos\Api\Controllers\Content;
 
-use App\Http\Controllers\Controller;
+use Chronos\Http\Controllers\Controller;
 use Chronos\Models\ContentField;
 use Chronos\Models\ContentFieldset;
 use Chronos\Models\ContentType;

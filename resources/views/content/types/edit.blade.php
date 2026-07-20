@@ -15,7 +15,9 @@
                 <div class="panel">
                     <h2 class="panel-title">{!! trans('chronos::interface.Content type info') !!}</h2>
                     <content-type-editor v-bind:type-id="{{ $type->id }}" inline-template>
-                    {!! Form::model($type, ['route' => ['api.content.types.update', $type], 'method' => 'PATCH', 'v-on:submit.prevent' => 'saveForm', 'novalidate' => 'novalidate']) !!}
+                    <form method="POST" action="{{ route('api.content.types.update', $type) }}" v-on:submit.prevent="saveForm" novalidate>
+                        @csrf
+                        @method('PATCH')
                         <div class="form-group" v-bind:class="{ 'has-error': Object.hasKey(store.formErrors, 'name') }">
                             <label class="control-label label-req" for="name">{!! trans('chronos::forms.Name') !!}</label>
                             <input class="form-control" id="name" name="name" type="text" v-model="name" />
@@ -49,7 +51,7 @@
                             <a class="btn btn-cancel" href="{{ route('chronos.content.types') }}">{!! trans('chronos::forms.Cancel') !!}</a>
                             <button class="btn btn-primary" name="process" type="submit" value="1">{!! trans('chronos::forms.Save') !!}</button>
                         </div>
-                    {!! Form::close() !!}
+                    </form>
                     </content-type-editor>
                 </div>
             </div>

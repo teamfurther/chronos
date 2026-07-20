@@ -15,27 +15,28 @@
                 <div class="panel">
                     <h2 class="panel-title">{!! trans('chronos::interface.Edit profile') !!}</h2>
 
-                    {!! Form::model(Auth::user(), ['route' => 'chronos.auth.profile_post', 'method' => 'POST']) !!}
+                    <form method="POST" action="{{ route('chronos.auth.profile_post') }}">
+                        @csrf
 
                     <div class="form-group @if ($errors->has('firstname')) has-error @endif">
-                        {!! Form::label('firstname', trans('chronos::forms.Firstname'), ['class' => 'control-label']) !!}
-                        {!! Form::text('firstname', null, ['class' => 'form-control']) !!}
+                        <label class="control-label" for="firstname">{!! trans('chronos::forms.Firstname') !!}</label>
+                        <input class="form-control" id="firstname" name="firstname" type="text" value="{{ old('firstname', Auth::user()->firstname) }}" />
                         @if ($errors->has('firstname'))
                             <span class="help-block">{{ $errors->first('firstname') }}</span>
                         @endif
                     </div>
 
                     <div class="form-group @if ($errors->has('lastname')) has-error @endif">
-                        {!! Form::label('lastname', trans('chronos::forms.Lastname'), ['class' => 'control-label']) !!}
-                        {!! Form::text('lastname', null, ['class' => 'form-control']) !!}
+                        <label class="control-label" for="lastname">{!! trans('chronos::forms.Lastname') !!}</label>
+                        <input class="form-control" id="lastname" name="lastname" type="text" value="{{ old('lastname', Auth::user()->lastname) }}" />
                         @if ($errors->has('lastname'))
                             <span class="help-block">{{ $errors->first('lastname') }}</span>
                         @endif
                     </div>
 
                     <div class="form-group @if ($errors->has('email')) has-error @endif">
-                        {!! Form::label('email', trans('chronos::forms.Email address'), ['class' => 'control-label']) !!}
-                        {!! Form::text('email', null, ['class' => 'form-control']) !!}
+                        <label class="control-label" for="email">{!! trans('chronos::forms.Email address') !!}</label>
+                        <input class="form-control" id="email" name="email" type="text" value="{{ old('email', Auth::user()->email) }}" />
                         @if ($errors->has('email'))
                             <span class="help-block">{{ $errors->first('email') }}</span>
                         @endif
@@ -45,7 +46,7 @@
                         <button type="submit" class="btn btn-primary">{!! trans('chronos::forms.Save') !!}</button>
                     </div>
 
-                    {!! Form::close() !!}
+                    </form>
                 </div>
             </div>
             <div class="col-sm-12 col-md-4">
@@ -68,27 +69,28 @@
             <div class="col-sm-12 col-md-8">
                 <div class="panel">
                     <h2 class="panel-title">{!! trans('chronos::interface.Change password') !!}</h2>
-                    {!! Form::open(['route' => 'chronos.auth.update_password', 'method' => 'POST']) !!}
+                    <form method="POST" action="{{ route('chronos.auth.update_password') }}">
+                        @csrf
 
                     <div class="form-group @if ($errors->has('current_password')) has-error @endif">
-                        {!! Form::label('current_password', trans('chronos::forms.Current password'), ['class' => 'control-label']) !!}
-                        {!! Form::password('current_password', ['class' => 'form-control']) !!}
+                        <label class="control-label" for="current_password">{!! trans('chronos::forms.Current password') !!}</label>
+                        <input class="form-control" id="current_password" name="current_password" type="password" />
                         @if ($errors->has('current_password'))
                             <span class="help-block">{{ $errors->first('current_password') }}</span>
                         @endif
                     </div>
 
                     <div class="form-group @if ($errors->has('password')) has-error @endif">
-                        {!! Form::label('password', trans('chronos::forms.New password'), ['class' => 'control-label']) !!}
-                        {!! Form::password('password', ['class' => 'form-control']) !!}
+                        <label class="control-label" for="password">{!! trans('chronos::forms.New password') !!}</label>
+                        <input class="form-control" id="password" name="password" type="password" />
                         @if ($errors->has('password'))
                             <span class="help-block">{{ $errors->first('password') }}</span>
                         @endif
                     </div>
 
                     <div class="form-group @if ($errors->has('password_confirmation')) has-error @endif">
-                        {!! Form::label('password_confirmation', trans('chronos::forms.Confirm new password'), ['class' => 'control-label']) !!}
-                        {!! Form::password('password_confirmation', ['class' => 'form-control']) !!}
+                        <label class="control-label" for="password_confirmation">{!! trans('chronos::forms.Confirm new password') !!}</label>
+                        <input class="form-control" id="password_confirmation" name="password_confirmation" type="password" />
                         @if ($errors->has('password_confirmation'))
                             <span class="help-block">{{ $errors->first('password_confirmation') }}</span>
                         @endif
@@ -98,7 +100,7 @@
                         <button type="submit" class="btn btn-primary">{!! trans('chronos::forms.Update') !!}</button>
                     </div>
 
-                    {!! Form::close() !!}
+                    </form>
                 </div>
             </div>
         </div>

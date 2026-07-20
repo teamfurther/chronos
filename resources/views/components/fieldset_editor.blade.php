@@ -254,7 +254,7 @@
                                     response.body.data.forEach(function (contentType) {
                                         entityTypes['contentTypes'].push({
                                             id: contentType.id,
-                                            model: '\\Chronos\\Content\\Models\\ContentType',
+                                            model: '\\Chronos\\Models\\ContentType',
                                             name: contentType.name
                                         });
                                     });
